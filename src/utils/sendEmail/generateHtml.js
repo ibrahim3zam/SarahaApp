@@ -1,5 +1,9 @@
-export const template = (code, title = "Welcome to Saraha App", text = "Please click the button below to verify your email address.") => {
-    return `
+export const template = (
+  code,
+  title = 'Welcome to Saraha App',
+  text = 'Please click the button below to verify your email address.'
+) => {
+  return `
     <!DOCTYPE html>
     <html>
     <head>

@@ -1,5 +1,5 @@
-import Joi from "joi";
-import { generateValidation } from "../../middleware/valdation.middleware.js";
+import Joi from 'joi';
+import { generateValidation } from '../../middleware/validation.middleware.js';
 
 export const loginSchema = Joi.object({
   email: generateValidation.email,
@@ -17,15 +17,13 @@ export const signUpSchema = Joi.object({
   password: generateValidation.password,
   age: generateValidation.age,
   phone: generateValidation.phone,
-  role: generateValidation.role,
-  gender: generateValidation.gender
+  gender: generateValidation.gender,
 });
 
 export const uploadImageSchema = Joi.object({
-    file: generateValidation.file.required()
-    
-})
+  file: generateValidation.file.required(),
+});
 
 export const updateCoverImagesSchema = Joi.object({
-    files: Joi.array().items(generateValidation.file).max(5).required()
-})
+  files: Joi.array().items(generateValidation.file).max(5).required(),
+});

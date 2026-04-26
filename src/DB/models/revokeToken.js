@@ -1,22 +1,24 @@
-import { Schema,model,Types } from "mongoose";
+import { Schema, model, Types } from 'mongoose';
 
-
-const revokeTokenSchema = new Schema({
+const revokeTokenSchema = new Schema(
+  {
     jti: {
-        type: String,
-        required: true,
-        unique: true,
+      type: String,
+      required: true,
+      unique: true,
     },
     expiredIn: {
-        type: Date,
-        required: true,
+      type: Date,
+      required: true,
     },
     user: {
-        type: Types.ObjectId,
-        ref: "User",
-        required: true,
-    }
-}, {
+      type: Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+  },
+  {
     timestamps: true,
-}) 
-export  const RevokeToken = model("revokeToken", revokeTokenSchema);
+  }
+);
+export const RevokeToken = model('revokeToken', revokeTokenSchema);
