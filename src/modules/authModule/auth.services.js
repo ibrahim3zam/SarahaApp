@@ -29,9 +29,10 @@ export const signUp = async (req, res) => {
   if (isExist) {
     throw new BadRequestError('Email already exists');
   }
-  const hash = await bcrypt.hash(password, process.env.SALT);
+  const saltRounds = parseInt(process.env.SALT) || 10;
+  const hash = await bcrypt.hash(password, saltRounds);
   const otp = generateOtp();
-  const hashOtp = await bcrypt.hash(otp, process.env.SALT);
+  const hashOtp = await bcrypt.hash(otp, saltRounds);
   const newUser = new userModel({
     name,
     email,
@@ -45,6 +46,7 @@ export const signUp = async (req, res) => {
       expiredIn: new Date(Date.now() + 10 * 60 * 1000), // صلاحية ال OTP لمدة 10 دقائق
     },
   });
+  
 
   await newUser.save();
   emailEvent.emit('sendEmail', {
@@ -56,13 +58,24 @@ export const signUp = async (req, res) => {
       'Please use the following OTP to verify your email address.'
     ),
   });
-  successRes({ res, data: newUser, status: 201 });
+  const safeUser = {
+  _id: newUser._id,
+  name: newUser.name,
+  email: newUser.email,
+  role: newUser.role,
 };
+successRes({
+  res,
+  status: 201,
+  message: 'Account created. Check email for OTP.',
+  data: safeUser,
+});};
 
 export const signIn = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await userDB.findOne({ email });
+  const user = await userDB.findOne ({ email } )
+
   if (!user) {
     throw new BadRequestError('Invalid email or password');
   }
@@ -83,7 +96,7 @@ export const signIn = async (req, res) => {
   const accessJti = nanoid();
   const refreshJti = nanoid();
 
-  const payload = { id: user._id, role: user.role };
+  // const payload = { id: user._id, role: user.role };
 
   const accessToken = jwt.sign(
     {
@@ -99,6 +112,7 @@ export const signIn = async (req, res) => {
   const refreshToken = jwt.sign(
     {
       id: user._id,
+      jti: refreshJti,
       type: types.refresh,
     },
     process.env.REFRESH_TOKEN_SECRET,
@@ -117,7 +131,7 @@ export const signIn = async (req, res) => {
 };
 
 export const refreshToken = async (req, res) => {
-  try {
+  
     const { authorization } = req.headers;
 
     const payload = verifyToken(authorization, types.refresh);
@@ -161,9 +175,6 @@ export const refreshToken = async (req, res) => {
     );
 
     successRes({ res, data: { accessToken: newAccessToken } });
-  } catch (error) {
-    return res.status(401).json({ message: error.message });
-  }
 };
 
 export const confirmEmail = async (req, res, next) => {
@@ -172,14 +183,14 @@ export const confirmEmail = async (req, res, next) => {
   const user = await userDB.findOne({ email });
 
   if (!user) {
-    return next(new Error('Invalid email'));
+    return next(new NotFoundError('Invalid email'));
   }
   if (user.emailOtp.expiredIn < new Date()) {
-    return next(new Error('OTP expired'));
+    return next(new NotFound('OTP expired'));
   }
   // لو confirmed قبل كده
   if (user.confirmEmail === true) {
-    return res.status(400).json({ message: 'Email already confirmed' });
+    return next(new BadRequestError('Email already confirmed'));
   }
 
   // تأكد إن فيه otp
@@ -212,20 +223,15 @@ export const resendCode = async (req, res, next) => {
   if (!user) {
     return next(new Error('Invalid email'));
   }
-  if (!user.confirmEmail) {
+  if (user.confirmEmail) {
     return next(new Error('Email already confirmed'));
+  }
+  if(user.isEmailSent){
+   return next(new Error('OTP already sent. Please check your email or wait before requesting again.')); 
   }
   const otp = generateOtp();
   const hashOtp = await bcrypt.hash(otp, 5);
-  await userDB.updateOne(
-    { _id: user._id },
-    {
-      emailOtp: {
-        otp: hashOtp,
-        expiredIn: new Date(Date.now() + 10 * 60 * 1000),
-      },
-    }
-  );
+  
   emailEvent.emit('sendEmail', {
     to: email,
     subject: 'Resend Email Verification',
@@ -235,6 +241,17 @@ export const resendCode = async (req, res, next) => {
       'Please use the following OTP to verify your email address.'
     ),
   });
+  await userDB.updateOne(
+    { _id: user._id },
+    {
+      emailOtp: {
+        otp: hashOtp,
+        expiredIn: new Date(Date.now() + 10 * 60 * 1000),
+      },
+        isEmailSent: true,
+    }
+
+  );
   successRes({ res, data: 'OTP resent to email' });
 };
 
@@ -271,7 +288,7 @@ export const forgotPassword = async (req, res, next) => {
   successRes({ res, data: 'OTP sent to email' });
 };
 
-export const resetPassword = async (req, res) => {
+export const resetPassword = async (req, res,next) => {
   const { email, otp, newPassword } = req.body;
   const user = await userDB.findOne({ email });
   if (!user) {
@@ -317,16 +334,16 @@ export const updateEmail = async (req, res) => {
   // generate OTPs
   const oldEmailOtp = generateOtp();
   const newEmailOtp = generateOtp();
-
+  saltRounds = parseInt(process.env.SALT) || 10;
   // store hashed OTPs
   user.emailOtp = {
-    otp: await bcrypt.hash(oldEmailOtp, 10),
-    expiresIn: Date.now() + 10 * 60 * 1000,
+    otp: await bcrypt.hash(oldEmailOtp, saltRounds),
+    expiresIn: new Date(Date.now() + 10 * 60 * 1000),
   };
 
   user.newEmailOtp = {
-    otp: await bcrypt.hash(newEmailOtp, 10),
-    expiresIn: Date.now() + 10 * 60 * 1000,
+    otp: await bcrypt.hash(newEmailOtp, saltRounds),
+    expiresIn: new Date(Date.now() + 10 * 60 * 1000),
   };
 
   user.newEmail = newEmail;
@@ -415,22 +432,26 @@ export const confirmEmailChange = async (req, res) => {
 };
 
 export const updatePassword = async (req, res) => {
-  const user = req.user;
   const { newPassword, currentPassword } = req.body;
 
-  // check current password
+  const user = await userModel
+    .findById(req.user._id)
+    .select('+password +oldPasswords');
+
+  if (!user) {
+    throw new BadRequestError('User not found');
+  }
+
   const isMatch = await bcrypt.compare(currentPassword, user.password);
   if (!isMatch) {
     throw new BadRequestError('Current password is incorrect');
   }
 
-  // check new password not same as current
   const isSame = await bcrypt.compare(newPassword, user.password);
   if (isSame) {
     throw new BadRequestError('New password must be different');
   }
 
-  // check against old passwords
   for (const oldPass of user.oldPasswords || []) {
     const isOldMatch = await bcrypt.compare(newPassword, oldPass);
     if (isOldMatch) {
@@ -438,16 +459,18 @@ export const updatePassword = async (req, res) => {
     }
   }
 
-  // save current password in oldPasswords
   user.oldPasswords = user.oldPasswords || [];
   user.oldPasswords.push(user.password);
 
-  // hash new password
   user.password = await bcrypt.hash(newPassword, 10);
+  user.credentialsChangedAt = new Date();
 
   await user.save();
 
-  successRes({ res, data: 'Password updated successfully' });
+  return successRes({
+    res,
+    message: 'Password updated successfully',
+  });
 };
 
 export const logOut = async (req, res) => {
@@ -460,7 +483,7 @@ export const logOut = async (req, res) => {
   await RevokeToken.create({
     user: user._id,
     jti: tokenData.jti,
-    expiredIn: tokenData.iat + 7 * 24 * 60 * 60,
+    expiredIn:( tokenData.iat + 7 * 24 * 60 * 60) * 1000,
   });
   successRes({ res, data: 'Logged out successfully' });
 };

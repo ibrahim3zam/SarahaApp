@@ -1,17 +1,12 @@
 import { model, Schema, Types } from 'mongoose';
-import { imageSchema } from './user.model';
-import { required } from 'joi';
+import { imageSchema } from './user.model.js';
 
 const messageSchema = new Schema(
   {
     body: {
       type: String,
-      required: function () {
-        if (this.images.length() > 0) {
-          return false;
-        }
-        return true;
-      },
+      trim: true,
+      maxlength: 1000,
     },
     images: [imageSchema],
     from: {
@@ -32,5 +27,11 @@ const messageSchema = new Schema(
     timestamps: true,
   }
 );
+messageSchema.pre('validate', function () {
+  if (!this.body && (!this.images || this.images.length === 0)) {
+    this.invalidate('body', 'Message must have a body or at least one image');
+  }
+  
+});
 
 export const messageModel = model('messages', messageSchema);

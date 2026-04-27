@@ -8,8 +8,10 @@ import userRouter from './userModule/user.controller.js';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import cors from 'cors';
+import ExpressMongoSanitize from 'express-mongo-sanitize';
+import { mongo } from 'mongoose';
 
-const startApp = (app, express) => {
+const startApp = async(app, express) => {
   const port = process.env.PORT;
 
   app.use(express.json());
@@ -23,6 +25,7 @@ const startApp = (app, express) => {
     //   allowedHeaders: ['Content-Type', 'Authorization'],
     // })
 //   );
+app.use(ExpressMongoSanitize());
   app.use(helmet());
   app.use(
     rateLimit({
@@ -33,7 +36,7 @@ const startApp = (app, express) => {
     })
   );
 
-  connectDB();
+     await connectDB();
 
   app.use('/uploads', express.static('./uploads'));
   app.use('/auth', authRouter);

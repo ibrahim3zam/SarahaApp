@@ -20,5 +20,11 @@ const revokeTokenSchema = new Schema(
   {
     timestamps: true,
   }
+); 
+
+// Automatically remove expired tokens from the database after their expiration time has passed
+revokeTokenSchema.index(
+  { expiredIn: 1 },
+  { expireAfterSeconds: 0 }
 );
 export const RevokeToken = model('revokeToken', revokeTokenSchema);

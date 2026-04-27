@@ -5,7 +5,7 @@ import { log } from 'console';
 import { BadRequestError } from '../appError.js';
 
 export const uploadFile = () => {
-  const storage = multer.memoryStorage({
+  const storage = multer.diskStorage({
     destination: function (req, file, cb) {
       const folderName = req.user
         ? `${req.user._id}_!${req.user.name}`

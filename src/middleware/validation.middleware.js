@@ -53,6 +53,8 @@ export const generateValidation = {
       return value;
     })
     .required(),
+
+
   file: Joi.object({
     fieldname: Joi.string().valid('image', 'images').required(),
     filename: Joi.string().required(),
@@ -67,4 +69,8 @@ export const generateValidation = {
       .max(5 * 1024 * 1024)
       .required(), // Max file size of 5MB
   }).required(),
+
+  
+  messageBody: Joi.string().max(1000).allow('').optional(),
+
 };

@@ -1,6 +1,5 @@
 import multer from 'multer';
 import fs from 'fs';
-import { type } from 'os';
 import { BadRequestError } from '../appError.js';
 
 export const fileType = {

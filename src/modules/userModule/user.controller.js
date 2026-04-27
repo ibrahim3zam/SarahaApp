@@ -14,7 +14,6 @@ const router = Router();
 router.get(
   '/getUser',
   auth(),
-  allowRoles(Roles.admin),
   userServices.getProfile
 );
 router.get('/share-profile', auth(), userServices.shareProfile);

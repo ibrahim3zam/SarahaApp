@@ -1,4 +1,4 @@
-import userModel from '../../DB/models/user.model.js';
+import userModel, { Roles } from '../../DB/models/user.model.js';
 import bcrypt, { compare } from 'bcrypt';
 import DBService from '../../DB/DbService.js';
 import { successRes } from '../../utils/success.res.js';
@@ -36,7 +36,8 @@ export const getProfile = async (req, res) => {
 
 export const shareProfile = async (req, res) => {
   const user = req.user; // جاي من middleware
-  const link = `http://localhost:3000/auth/user-profile/${user._id}`;
+  const link = `${process.env.BASE_URL}/users/user-profile/${user._id}`
+              ;
   successRes({ res, data: { message: 'Profile shared successfully', link } });
 };
 
@@ -121,18 +122,18 @@ export const updateCoverImages = async (req, res) => {
 };
 
 export const softDeleteUser = async (req, res) => {
-  const id = req.params.id;
-  const user = req.user;
-  const loggedUser = await userDB.findById(user._id);
-  if (!loggedUser) {
-    throw new NotFoundError();
+  const targetUser = await userDB.findById(req.params.id);
+  if (!targetUser) {
+    throw new NotFoundError("User not found");
   }
-  if (loggedUser.role !== 'admin' && String(user._id) !== id) {
-    throw new UnauthorizedError('Unauthorized');
+  const isAdminAction=req.user.role === Roles.admin;
+  if(!isAdminAction){
+  return next(new UnauthorizedError('Unauthorized'));
   }
-  user.isActive = false;
-  user.deletedBy = loggedUser._id;
-  await user.save();
+  
+  targetUser.isActive = false;
+  targetUser.deletedBy = req.user._id;
+  await targetUser.save();
   successRes({ res, data: 'User soft deleted successfully' });
 };
 

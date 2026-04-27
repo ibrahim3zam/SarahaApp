@@ -45,8 +45,8 @@ const userSchema = new Schema(
     password: {
       type: String,
       required: true,
-      min: 4,
-      max: 20,
+      minlength: 8,
+      maxlength: 128,
     },
     oldPasswords: [
       {
@@ -62,6 +62,10 @@ const userSchema = new Schema(
       required: true,
     },
     confirmEmail: {
+      type: Boolean,
+      default: false,
+    },
+    isEmailSent: {
       type: Boolean,
       default: false,
     },
@@ -87,7 +91,7 @@ const userSchema = new Schema(
       enum: Object.values(Gender),
       default: Gender.male,
     },
-    credntialsChangedAt: {
+    credentialsChangedAt: {
       type: Date,
       default: Date.now,
     },
@@ -107,37 +111,18 @@ const userSchema = new Schema(
         type: String,
       },
     },
-    coverImages: [imageSchema],
-    messages: [
-      {
-        from: {
-          type: Schema.Types.ObjectId,
-          ref: 'users',
-        },
-        to: {
-          type: Schema.Types.ObjectId,
-          ref: 'users',
-          required: true,
-        },
-        body: String,
-        images: [imageSchema],
-        timestamp: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
+   
   },
   {
     timestamps: true,
     toJSON: { virtuals: true },
-    virtuals: {
-      userMessages: {
-        get() {
-          return 'my age is ' + this.age;
-        },
-      },
-    },
+    // virtuals: {
+    //   userMessages: {
+    //     get() {
+    //       return 'my age is ' + this.age;
+    //     },
+    //   },
+    // },
     methods: {
       comparePassword(pass) {
         return compare(pass, this.password);
