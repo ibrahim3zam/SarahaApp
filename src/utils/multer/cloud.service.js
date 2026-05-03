@@ -1,9 +1,13 @@
 import { cloudConfig } from './cloudinary.js';
+import fs from 'fs/promises';
 
 export const uploadSingleFile = async ({ path, folder = 'others' }) => {
   const { secure_url, public_id } = await cloudConfig().uploader.upload(path, {
     folder: `${process.env.CLOUDINARY_CLOUD_NAME}/${folder}`,
   });
+  
+  await fs.unlink(path).catch(() => {}); // Silently ignore if already gone
+  
   return { secure_url, public_id };
 };
 

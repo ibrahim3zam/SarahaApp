@@ -3,6 +3,8 @@ import { allowRoles, auth } from '../../middleware/auth.middleware.js';
 import * as userServices from './user.services.js';
 import { Roles } from '../../DB/models/user.model.js';
 import { validation } from '../../middleware/validation.middleware.js';
+import { userAuth, adminAuth } from '../../middleware/auth.middleware.js';
+
 import {
   updateCoverImagesSchema,
   uploadImageSchema,
@@ -16,9 +18,9 @@ router.get(
   auth(),
   userServices.getProfile
 );
-router.get('/share-profile', auth(), userServices.shareProfile);
+router.get('/share-profile', userAuth, userServices.shareProfile);
 router.get('/user-profile/:id', userServices.userProfile);
-router.patch('/update-profile', auth(), userServices.updateUser);
+router.patch('/update-profile', userAuth, userServices.updateUser);
 router.patch(
   '/cover-images',
   auth(),
@@ -26,16 +28,16 @@ router.patch(
   validation(updateCoverImagesSchema),
   userServices.updateCoverImages
 );
-router.patch('/soft-delete/:id', auth(), userServices.softDeleteUser);
+router.patch('/soft-delete/:id', adminAuth, userServices.softDeleteUser);
 router.patch(
   '/restore/:id',
   auth({ activation: false }),
   userServices.restoreUser
 );
-router.delete('/hard-delete/:id', auth(), userServices.hardDeleteUser);
+router.delete('/hard-delete/:id', adminAuth, userServices.hardDeleteUser);
 router.patch(
   '/upload-profile',
-  auth(),
+  userAuth,
   cloudUploadFile({ type: fileType.Image }).single('image'),
   validation(uploadImageSchema),
   userServices.uploadProfileImage

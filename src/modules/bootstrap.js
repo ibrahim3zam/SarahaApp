@@ -6,10 +6,17 @@ import authRouter from './authModule/auth.controller.js';
 import messageRouter from './messageModule/message.controller.js';
 import userRouter from './userModule/user.controller.js';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
 import cors from 'cors';
-import ExpressMongoSanitize from 'express-mongo-sanitize';
 import { mongo } from 'mongoose';
+  import pino from 'pino';
+import rateLimit from 'express-rate-limit';
+
+  const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 300,
+  
+});
+
 
 const startApp = async(app, express) => {
   const port = process.env.PORT;
@@ -25,16 +32,8 @@ const startApp = async(app, express) => {
     //   allowedHeaders: ['Content-Type', 'Authorization'],
     // })
 //   );
-app.use(ExpressMongoSanitize());
   app.use(helmet());
-  app.use(
-    rateLimit({
-      windowMs: 15 * 60 * 1000, // 15 دقيقة
-      max: 100, // الحد الأقصى لعدد الطلبات من نفس IP خلال فترة الـ windowMs
-      message:
-        'Too many requests from this IP, please try again after 15 minutes',
-    })
-  );
+app.use("/", globalLimiter);
 
      await connectDB();
 
@@ -61,9 +60,14 @@ app.use(ExpressMongoSanitize());
         : {}),
     });
   });
+  const logger = pino({
+    level: "info"
+  });
 
   app.listen(port, () => {
     console.log(chalk.bgGreen(`Srever is Running....on Port${port}`));
+    // logger.info(`Server is running on port ${port}`);
+    
   });
 };
 

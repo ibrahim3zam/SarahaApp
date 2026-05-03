@@ -30,22 +30,16 @@ class DBService {
   }
 
   // UPDATE
-  async updateOne(filter, data) {
-    return await this.model.findOneAndUpdate(filter, data, {
-      returnDocument: 'after',
-    });
+  async updateOne(filter, data, options = {}) {
+    return await this.model.updateOne(filter, data, options);
   }
 
-  async updateById(id, data) {
-    return await this.model.findByIdAndUpdate(id, data, {
-      returnDocument: 'after',
-    });
+  async updateById(id, data, options = { new: true }) {
+    return await this.model.findByIdAndUpdate(id, data, options);
   }
 
-  async findOneAndUpdate(filter, data) {
-    return await this.model.findOneAndUpdate(filter, data, {
-      returnDocument: 'after',
-    });
+  async findOneAndUpdate(filter, data, options = { new: true }) {
+    return await this.model.findOneAndUpdate(filter, data, options);
   }
 
   // DELETE

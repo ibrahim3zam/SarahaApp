@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import userModel from '../DB/models/user.model.js';
+import userModel, { Roles } from '../DB/models/user.model.js';
 import { RevokeToken } from '../DB/models/revokeToken.js';
 import { UnauthorizedError, AppError } from '../utils/appError.js';
 
@@ -45,7 +45,7 @@ export const verifyToken = (authorization, tokenType = types.access) => {
   return payload;
 };
 
-export const auth = ({ activation = true } = {}) => {
+export const auth = ({ activation = true, roles = Object.values(Roles) } = {}) => {
   return async (req, res, next) => {
     try {
       const { authorization } = req.headers;
@@ -56,6 +56,15 @@ export const auth = ({ activation = true } = {}) => {
 
       if (!user) {
         return next(new UnauthorizedError('User not found'));
+      }
+
+      if (!roles.includes(user.role)) {
+        return next(
+          new AppError(
+            "Forbidden: You don't have permission to access this resource",
+            403
+          )
+        );
       }
 
       const revokedToken = await RevokeToken.findOne({ jti: payload.jti });
@@ -94,6 +103,10 @@ export const auth = ({ activation = true } = {}) => {
     }
   };
 };
+
+// Ready-to-use Middlewares
+export const userAuth = auth({ roles: [Roles.user, Roles.admin] });
+export const adminAuth = auth({ roles: [Roles.admin] });
 
 export const allowRoles = (...allowedRoles) => {
   return (req, res, next) => {

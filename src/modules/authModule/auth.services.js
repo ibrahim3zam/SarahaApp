@@ -118,11 +118,10 @@ export const signIn = async (req, res) => {
     process.env.REFRESH_TOKEN_SECRET,
     {
       expiresIn: '7d',
-      jwtid: nanoid(),
     }
   );
 
-  user.password = undefined;
+  // user.password = undefined;
 
   successRes({
     res,
@@ -170,7 +169,6 @@ export const refreshToken = async (req, res) => {
       process.env.ACCESS_TOKEN_SECRET,
       {
         expiresIn: '15m',
-        jwtid: nanoid(),
       }
     );
 
@@ -483,7 +481,7 @@ export const logOut = async (req, res) => {
   await RevokeToken.create({
     user: user._id,
     jti: tokenData.jti,
-    expiredIn:( tokenData.iat + 7 * 24 * 60 * 60) * 1000,
+    expiredIn:(new Date((tokenData.iat + 7 * 24 * 60 * 60) * 1000)),
   });
   successRes({ res, data: 'Logged out successfully' });
 };

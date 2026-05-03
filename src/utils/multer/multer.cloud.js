@@ -1,5 +1,6 @@
 import multer from 'multer';
 import fs from 'fs';
+import path from 'path';
 import { BadRequestError } from '../appError.js';
 
 export const fileType = {
@@ -13,7 +14,24 @@ export const fileType = {
 };
 
 export const cloudUploadFile = ({ type = fileType.Image }) => {
-  const storage = multer.diskStorage({});
+  const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+      const dest = 'uploads/temp';
+      req.dest = dest;
+      const fullpath = path.resolve('.', dest);
+
+      if (!fs.existsSync(fullpath)) {
+        fs.mkdirSync(fullpath, { recursive: true });
+      }
+
+      cb(null, fullpath);
+    },
+    filename: (req, file, cb) => {
+      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+      const name = uniqueSuffix + '-' + file.originalname;
+      cb(null, name);
+    },
+  });
 
   const fileFilter = (req, file, cb) => {
     if (type.includes(file.mimetype)) {

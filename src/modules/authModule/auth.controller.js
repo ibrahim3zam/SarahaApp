@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as authServices from './auth.services.js';
-import { allowRoles, auth } from '../../middleware/auth.middleware.js';
+import { userAuth, adminAuth } from '../../middleware/auth.middleware.js';
+
 import { Roles } from '../../DB/models/user.model.js';
 import { validation } from '../../middleware/validation.middleware.js';
 import {
@@ -25,13 +26,13 @@ router.patch(
 router.post('/forgot-password', authServices.forgotPassword);
 router.patch('/reset-password', authServices.resetPassword);
 router.post('/resend-code', authServices.resendCode);
-router.patch('/update-email', auth(), authServices.updateEmail);
-router.patch('/confirm-new-email', auth(), authServices.confirmEmailChange);
-router.patch('/change-password', auth(), authServices.updatePassword);
-router.post('/logout', auth(), authServices.logOut);
+router.patch('/update-email', userAuth, authServices.updateEmail);
+router.patch('/confirm-new-email', userAuth, authServices.confirmEmailChange);
+router.patch('/change-password', userAuth, authServices.updatePassword);
+router.post('/logout', userAuth, authServices.logOut);
 router.post(
   '/logout-from-all-devices',
-  auth(),
+  userAuth,
   authServices.logoutFromAllDevices
 );
 export default router;
