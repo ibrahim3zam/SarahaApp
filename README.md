@@ -1,4 +1,4 @@
-# 🚀 Saraha App (Backend API)
+#  Saraha App (Backend API)
 
 A scalable and secure backend for a Saraha-style anonymous messaging application built with **Node.js, Express, and MongoDB**.
 
